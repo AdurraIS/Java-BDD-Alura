@@ -9,6 +9,7 @@ import java.util.Scanner;
 
 public class BytebankApplication {
 
+
     private static ContaService service = new ContaService();
     private static Scanner teclado = new Scanner(System.in).useDelimiter("\n");
 
