@@ -1,11 +1,16 @@
 package br.com.alura.bytebank.domain.conta;
 
 import br.com.alura.bytebank.domain.cliente.Cliente;
+import br.com.alura.bytebank.domain.cliente.DadosCadastroCliente;
 
+import javax.xml.transform.Result;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ContaDAO {
 
@@ -30,9 +35,61 @@ public class ContaDAO {
             preparedStatement.setString(5,dadosDaConta.dadosCliente().email());
 
             preparedStatement.execute();
+            preparedStatement.close();
+            conn.close();
         } catch (SQLException e){
             throw new RuntimeException(e);
         }
     }
+    public Set<Conta> listar(){
+        Set<Conta> contas = new HashSet<>();
+        PreparedStatement ps;
+        ResultSet resultSet;
+        String sql = "SELECT * FROM conta";
+        try{
+            ps = conn.prepareStatement(sql);
+            resultSet = ps.executeQuery();
 
+            while(resultSet.next()){
+                Integer numero = resultSet.getInt(1);
+                BigDecimal saldo = resultSet.getBigDecimal(2);
+                String nome = resultSet.getString(3);
+                String cpf = resultSet.getString(4);
+                String email = resultSet.getString(5);
+                DadosCadastroCliente dadosCadastroCliente = new DadosCadastroCliente(nome,cpf,email);
+                Cliente cliente = new Cliente(dadosCadastroCliente);
+                contas.add(new Conta(numero, cliente));
+            }
+            resultSet.close();
+            ps.close();
+            conn.close();
+        } catch (SQLException e){
+            throw new RuntimeException(e);
+        }
+        return contas;
+
+    }
+    public BigDecimal RecuperaSaldo(Integer numeroDaConta) {
+        PreparedStatement ps;
+        BigDecimal saldo = null;
+        ResultSet rs;
+        String sql = "SELECT saldo FROM conta WHERE numero = ?";
+        try{
+            ps = conn.prepareStatement(sql);
+            ps.setInt( 1,numeroDaConta);
+            rs = ps.executeQuery();
+
+
+            while(rs.next()) {
+                saldo = rs.getBigDecimal(1);
+            }
+            rs.close();
+            ps.close();
+            conn.close();
+
+        }catch(SQLException e){
+            throw new RuntimeException(e);
+        }
+        return saldo;
+    }
 }

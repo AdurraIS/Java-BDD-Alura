@@ -20,12 +20,14 @@ public class ContaService {
     private Set<Conta> contas = new HashSet<>();
 
     public Set<Conta> listarContasAbertas() {
-        return contas;
+        Connection conn = connection.RecuperaConexao();
+        return new ContaDAO(conn).listar();
     }
 
     public BigDecimal consultarSaldo(Integer numeroDaConta) {
-        var conta = buscarContaPorNumero(numeroDaConta);
-        return conta.getSaldo();
+        Connection conn = connection.RecuperaConexao();
+
+        return new ContaDAO(conn).RecuperaSaldo(numeroDaConta);
     }
 
     public void abrir(DadosAberturaConta dadosDaConta) {
