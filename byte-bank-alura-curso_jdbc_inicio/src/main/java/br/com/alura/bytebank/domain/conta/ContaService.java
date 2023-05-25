@@ -37,7 +37,8 @@ public class ContaService {
     }
 
     public void realizarSaque(Integer numeroDaConta, BigDecimal valor) {
-        var conta = buscarContaPorNumero(numeroDaConta);
+        Connection conn1 = connection.RecuperaConexao();
+        var conta = new ContaDAO(conn1).buscarConta(numeroDaConta);
         if (valor.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RegraDeNegocioException("Valor do saque deve ser superior a zero!");
         }
@@ -45,26 +46,54 @@ public class ContaService {
         if (valor.compareTo(conta.getSaldo()) > 0) {
             throw new RegraDeNegocioException("Saldo insuficiente!");
         }
-
-        conta.sacar(valor);
+        if(!conta.getEstaAtiva()){
+            throw new RegraDeNegocioException("Conta não está ativa");
+        }
+        Connection conn = connection.RecuperaConexao();
+        BigDecimal novoValor = conta.getSaldo().subtract(valor);
+        new ContaDAO(conn).alterar(conta.getNumero(), novoValor);
     }
 
     public void realizarDeposito(Integer numeroDaConta, BigDecimal valor) {
-        var conta = buscarContaPorNumero(numeroDaConta);
+        Connection conn1 = connection.RecuperaConexao();
+        var conta = new ContaDAO(conn1).buscarConta(numeroDaConta);
+
         if (valor.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RegraDeNegocioException("Valor do deposito deve ser superior a zero!");
         }
-
-        conta.depositar(valor);
+        if(!conta.getEstaAtiva()){
+            throw new RegraDeNegocioException("Conta não está ativa");
+        }
+        Connection conn = connection.RecuperaConexao();
+        BigDecimal novoValor = conta.getSaldo().add(valor);
+        new ContaDAO(conn).alterar(conta.getNumero(), novoValor);
     }
-
-    public void encerrar(Integer numeroDaConta) {
-        var conta = buscarContaPorNumero(numeroDaConta);
+    public void realizarTransferencia(Integer numeroContaOrigem, Integer numeroContaDestino, BigDecimal valor){
+        this.realizarSaque(numeroContaOrigem, valor);
+        this.realizarDeposito(numeroContaDestino, valor);
+    }
+    public void encerrarLogico(Integer numeroConta){
+        Connection conn1 = connection.RecuperaConexao();
+        var conta = new ContaDAO(conn1).buscarConta(numeroConta);
         if (conta.possuiSaldo()) {
             throw new RegraDeNegocioException("Conta não pode ser encerrada pois ainda possui saldo!");
         }
 
-        contas.remove(conta);
+        Connection conn = connection.RecuperaConexao();
+
+        new ContaDAO(conn).alterarLogico(conta.getNumero());
+    }
+
+    public void encerrar(Integer numeroDaConta) {
+        Connection conn1 = connection.RecuperaConexao();
+        var conta = new ContaDAO(conn1).buscarConta(numeroDaConta);
+        if (conta.possuiSaldo()) {
+            throw new RegraDeNegocioException("Conta não pode ser encerrada pois ainda possui saldo!");
+        }
+
+        Connection conn = connection.RecuperaConexao();
+
+        new ContaDAO(conn).deleteConta(conta.getNumero());
     }
 
     private Conta buscarContaPorNumero(Integer numero) {
